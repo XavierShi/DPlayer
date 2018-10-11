@@ -11,7 +11,7 @@ import FullScreen from './fullscreen';
 import User from './user';
 import Subtitle from './subtitle';
 import Bar from './bar';
-import Time from './time';
+import Timer from './timer';
 import Bezel from './bezel';
 import Controller from './controller';
 import Setting from './setting';
@@ -106,7 +106,8 @@ class DPlayer {
                     addition: this.options.danmaku.addition,
                     user: this.options.danmaku.user,
                 },
-                events: this.events
+                events: this.events,
+                tran: (msg) => this.tran(msg),
             });
 
             this.comment = new Comment(this);
@@ -123,7 +124,7 @@ class DPlayer {
 
         this.paused = true;
 
-        this.time = new Time(this);
+        this.timer = new Timer(this);
 
         this.hotkey = new HotKey(this);
 
@@ -163,6 +164,7 @@ class DPlayer {
         }
 
         this.bar.set('played', time / this.video.duration, 'width');
+        this.template.ptime.innerHTML = utils.secondToTime(time);
     }
 
     /**
@@ -181,8 +183,7 @@ class DPlayer {
             this.pause();
         }).then(() => {
         });
-        this.time.enable('loading');
-        this.time.enable('progress');
+        this.timer.enable('loading');
         this.container.classList.remove('dplayer-paused');
         this.container.classList.add('dplayer-playing');
         if (this.danmaku) {
@@ -208,11 +209,9 @@ class DPlayer {
             this.bezel.switch(Icons.pause);
         }
 
-        this.ended = false;
         this.template.playButton.innerHTML = Icons.play;
         this.video.pause();
-        this.time.disable('loading');
-        this.time.disable('progress');
+        this.timer.disable('loading');
         this.container.classList.remove('dplayer-playing');
         this.container.classList.add('dplayer-paused');
         if (this.danmaku) {
@@ -335,6 +334,10 @@ class DPlayer {
                 }
             }
 
+            if (this.type === 'hls' && (video.canPlayType('application/x-mpegURL') || video.canPlayType('application/vnd.apple.mpegURL'))) {
+                this.type = 'normal';
+            }
+
             switch (this.type) {
             // https://github.com/video-dev/hls.js
             case 'hls':
@@ -419,7 +422,8 @@ class DPlayer {
          */
         // show video time: the metadata has loaded or changed
         this.on('durationchange', () => {
-            if (video.duration !== 1) {           // compatibility: Android browsers will output 1 at first
+            // compatibility: Android browsers will output 1 or Infinity at first
+            if (video.duration !== 1 && video.duration !== Infinity) {
                 this.template.dtime.innerHTML = utils.secondToTime(video.duration);
             }
         });
@@ -432,20 +436,22 @@ class DPlayer {
 
         // video download error: an error occurs
         this.on('error', () => {
-            this.tran && this.notice && this.type !== 'webtorrent' & this.notice(this.tran('This video fails to load'), -1);
+            if (!this.video.error) {
+                // Not a video load error, may be poster load failed, see #307
+                return;
+            }
+            this.tran && this.notice && this.type !== 'webtorrent' & this.notice(this.tran('Video load failed'), -1);
         });
 
         // video end
-        this.ended = false;
         this.on('ended', () => {
             this.bar.set('played', 1, 'width');
             if (!this.setting.loop) {
-                this.ended = true;
                 this.pause();
             }
             else {
                 this.seek(0);
-                video.play();
+                this.play();
             }
             if (this.danmaku) {
                 this.danmaku.danIndex = 0;
@@ -461,6 +467,14 @@ class DPlayer {
         this.on('pause', () => {
             if (!this.paused) {
                 this.pause();
+            }
+        });
+
+        this.on('timeupdate', () => {
+            this.bar.set('played', this.video.currentTime / this.video.duration, 'width');
+            const currentTime = utils.secondToTime(this.video.currentTime);
+            if (this.template.ptime.innerHTML !== currentTime) {
+                this.template.ptime.innerHTML = currentTime;
             }
         });
 
@@ -537,10 +551,12 @@ class DPlayer {
             clearTimeout(this.noticeTime);
         }
         this.events.trigger('notice_show', text);
-        this.noticeTime = setTimeout(() => {
-            this.template.notice.style.opacity = 0;
-            this.events.trigger('notice_hide');
-        }, time);
+        if (time > 0) {
+            this.noticeTime = setTimeout(() => {
+                this.template.notice.style.opacity = 0;
+                this.events.trigger('notice_hide');
+            }, time);
+        }
     }
 
     resize () {
@@ -558,16 +574,15 @@ class DPlayer {
         instances.splice(instances.indexOf(this), 1);
         this.pause();
         this.controller.destroy();
-        this.time.destroy();
+        this.timer.destroy();
         this.video.src = '';
         this.container.innerHTML = '';
         this.events.trigger('destroy');
+    }
 
-        for (const key in this) {
-            if (this.hasOwnProperty(key) && key !== 'paused') {
-                delete this[key];
-            }
-        }
+    static get version () {
+        /* global DPLAYER_VERSION */
+        return DPLAYER_VERSION;
     }
 }
 

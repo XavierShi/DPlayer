@@ -82,7 +82,7 @@ loop | false | 视频循环播放
 lang | navigator.language.toLowerCase() | 可选值: 'en', 'zh-cn', 'zh-tw'
 screenshot | false | 开启截图，如果开启，视频和视频封面需要开启跨域
 hotkey | true | 开启热键
-preload | 'auto' | 可选值: 'none', 'metadata', 'auto'
+preload | 'auto' | 预加载，可选值: 'none', 'metadata', 'auto'
 volume | 0.7 | 默认音量，请注意播放器会记忆用户设置，用户手动设置音量后默认音量即失效
 logo | - | 在左上角展示一个 logo，你可以通过 CSS 调整它的大小和位置
 apiBackend | - | 自定义获取和发送弹幕行为，[详情](http://dplayer.js.org/#/home?id=live)
@@ -92,7 +92,7 @@ video.defaultQuality | - | [详情](http://dplayer.js.org/#/home?id=quality-swit
 video.url | - | 视频链接
 video.pic | - | 视频封面
 video.thumbnails | - | 视频缩略图，可以使用 [DPlayer-thumbnails](https://github.com/MoePlayer/DPlayer-thumbnails) 生成
-video.type | 'auto' | 可选值: 'auto', 'hls', 'flv', 'dash', 'webtorrent' 或其他自定义类型, [详情](http://dplayer.js.org/#/home?id=mse-support)
+video.type | 'auto' | 可选值: 'auto', 'hls', 'flv', 'dash', 'webtorrent', 'normal' 或其他自定义类型, [详情](http://dplayer.js.org/#/home?id=mse-support)
 video.customType | - | 自定义类型, [详情](http://dplayer.js.org/#/home?id=mse-support)
 subtitle | - | 外挂字幕
 subtitle.url | `required` | 字幕链接
@@ -110,6 +110,7 @@ danmaku.user | 'DIYgod' | 弹幕用户名
 danmaku.bottom | - | 弹幕距离播放器底部的距离，防止遮挡字幕，取值形如: '10px' '10%'
 danmaku.unlimited | false | 海量弹幕模式，即使重叠也展示全部弹幕，请注意播放器会记忆用户设置，用户手动设置后即失效
 contextmenu | [] | 自定义右键菜单
+highlight | [] | 自定义进度条提示点
 mutex | true | 互斥，阻止多个播放器同时播放，当前播放器播放时暂停其他播放器
 
 例如:
@@ -149,7 +150,7 @@ const dp = new DPlayer({
         api: 'https://api.prprpr.me/dplayer/',
         token: 'tokendemo',
         maximum: 1000,
-        addition: ['https://api.prprpr.me/dplayer/bilibili?aid=4157142'],
+        addition: ['https://api.prprpr.me/dplayer/v3/bilibili?aid=4157142'],
         user: 'DIYgod',
         bottom: '15%',
         unlimited: true
@@ -165,6 +166,16 @@ const dp = new DPlayer({
                 console.log(player);
             }
         }
+    ],
+    highlight: [
+        {
+            time: 20,
+            text: '这是第 20 秒'
+        },
+        {
+            time: 120,
+            text: '这是 2 分钟'
+        }
     ]
 });
 ```
@@ -178,7 +189,7 @@ const dp = new DPlayer({
 + `dp.seek(time: number)`: 跳转到特定时间
 
   ```js
-  dp.seek(1000);
+  dp.seek(100);
   ```
 
 + `dp.toggle()`: 切换播放和暂停
@@ -200,7 +211,7 @@ const dp = new DPlayer({
   });
   ```
 
-+ `dp.notice(text: string, time: number)`: 显示消息
++ `dp.notice(text: string, time: number)`: 显示通知，时间的单位为毫秒，默认时间2000毫秒，默认透明度0.8
 
 + `dp.switchQuality(index: number)`: 切换清晰度
 
@@ -208,11 +219,17 @@ const dp = new DPlayer({
 
 + `dp.speed(rate: number)`: 设置视频速度
 
++ `dp.volume(percentage: number, nostorage: boolean, nonotice: boolean)`: 设置视频音量
+
+  ```js
+  dp.volume(0.1, true, false);
+  ```
+
 + `dp.video`: 原生 video
 
  + `dp.video.currentTime`: 返回视频当前播放时间
 
- + `dp.video.loop`: 返回视频是否循环播放
+ + `dp.video.duration`: 返回视频总时间
 
  + `dp.video.paused`: 返回视频是否暂停
 
@@ -377,13 +394,13 @@ const dp = new DPlayer({
 
 `danmaku.addition`
 
-API: [https://api.prprpr.me/dplayer/v2/bilibili?aid=[aid]](https://api.prprpr.me/dplayer/v2/bilibili?aid=[aid]) or [https://api.prprpr.me/dplayer/v2/bilibili?cid=[cid]](https://api.prprpr.me/dplayer/v2/bilibili?cid=[cid])
+API: <https://api.prprpr.me/dplayer/v3/bilibili?aid=[aid]>
 
 ```js
 const option = {
     danmaku: {
         // ...
-        addition: ['https://api.prprpr.me/dplayer/v2/bilibili?aid=[aid]']
+        addition: ['https://api.prprpr.me/dplayer/v3/bilibili?aid=[aid]']
     }
 }
 ```
@@ -564,6 +581,39 @@ const dp = new DPlayer({
                     }, () => {
                         player.container.classList.remove('dplayer-loading');
                     });
+                });
+            }
+        }
+    }
+});
+```
+
+### 配合其他 MSE 库使用
+
+DPlayer 可以通过 `customType` 参数与任何 MSE 库一起使用
+
+<div class="dplayer-wrap">
+    <div id="dplayer10"><button class="docute-button load">点击加载播放器</div>
+</div>
+
+```html
+<link rel="stylesheet" href="DPlayer.min.css">
+<div id="dplayer"></div>
+<script src="pearplayer.js"></script>
+<script src="DPlayer.min.js"></script>
+```
+
+```js
+const dp = new DPlayer({
+    container: document.getElementById('dplayer'),
+    video: {
+        url: 'https://qq.webrtc.win/tv/Pear-Demo-Yosemite_National_Park.mp4',
+        type: 'pearplayer',
+        customType: {
+            'pearplayer': function (video, player) {
+                new PearPlayer(video, {
+                    src: video.src,
+                    autoplay: player.options.autoplay
                 });
             }
         }

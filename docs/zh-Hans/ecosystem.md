@@ -12,7 +12,6 @@ search: zh-Hans
 ### 参与讨论
 
 - [Telegram 群](https://t.me/adplayer)
-- [QQ 群](https://shang.qq.com/wpa/qunwpa?idkey=bf22213ae0028a82e5adf3f286dfd4f01e0997dc9f1dcd8e831a0a85e799be17): 415835947
 
 ### 提交 issue
 
@@ -45,11 +44,15 @@ search: zh-Hans
 ### 其他
 
 - [DPlayer-Lite](https://github.com/kn007/DPlayer-Lite): lite version
+- [hlsjs-p2p-engine](https://github.com/cdnbye/hlsjs-p2p-engine)
 
 ## 谁在用 DPlayer?
 
+- [小红书](https://www.xiaohongshu.com/): 中国最大的生活社区分享平台，同时也是发现全球好物的电商平台
+- [极客时间](https://time.geekbang.org/): 极客邦科技出品的一款 IT 内容知识服务 App
 - [嘀哩嘀哩](http://www.dilidili.wang/): 兴趣使然的无名小站（D站）
 - [银色子弹](https://www.sbsub.com/): 银色子弹，简称银弹，由多数柯南热爱者聚集在一起的组织
+- [浙江大学CC98论坛](https://zh.wikipedia.org/wiki/CC98%E8%AE%BA%E5%9D%9B): 浙江大学校网内规模最大的论坛，中国各大学中较活跃的BBS之一
 - [纸飞机南航青年网络社区](http://my.nuaa.edu.cn/video-video.html): 南京航空航天大学门户网站
 - [otomads](https://otomads.com/): 专注于音MAD的视频弹幕网站
 - [Cloudreve](https://github.com/HFO4/Cloudreve): 基于ThinkPHP构建的网盘系统
